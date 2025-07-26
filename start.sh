@@ -1,3 +1,4 @@
 #!/bin/bash
-uvicorn severity_predictor:app --host 0.0.0.0 --port 8000
+gunicorn -w 1 -k uvicorn.workers.UvicornWorker severity_predictor:app --bind 0.0.0.0:8000
+
 
