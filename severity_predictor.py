@@ -1,107 +1,45 @@
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "556d7bd2-c206-4994-a74e-6374dfc3efe6",
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "from fastapi import FastAPI\n",
-    "from pydantic import BaseModel\n",
-    "import joblib\n",
-    "import pandas as pd\n",
-    "import numpy as np\n",
-    "\n",
-    "# Load model artifacts\n",
-    "model = joblib.load('voting_severity_model.pkl')\n",
-    "preprocessor = joblib.load('model_preprocessor.pkl')\n",
-    "label_encoder = joblib.load('label_encoder.pkl')\n",
-    "\n",
-    "# Initialize FastAPI app\n",
-    "app = FastAPI(\n",
-    "    title=\"Conflict Severity Prediction API\",\n",
-    "    description=\"Predicts the severity level of conflict events in Kenya based on structured inputs.\",\n",
-    "    version=\"1.0.0\"\n",
-    ")\n",
-    "\n",
-    "# Input data structure\n",
-    "class EventInput(BaseModel):\n",
-    "    sub_event_type: str\n",
-    "    disorder_type: str\n",
-    "    primary_actor: str\n",
-    "    secondary_actor: str\n",
-    "    interaction: str\n",
-    "    admin1: str\n",
-    "    admin3: str\n",
-    "    location: str\n",
-    "    year: int\n",
-    "    time_precision: int\n",
-    "    latitude: float\n",
-    "    longitude: float\n",
-    "    month: int\n",
-    "\n",
-    "# Health check route\n",
-    "@app.get(\"/\")\n",
-    "def root():\n",
-    "    return {\"message\": \"API is live! Visit /docs for Swagger or POST to /predict with JSON payload.\"}\n",
-    "\n",
-    "# Prediction endpoint\n",
-    "@app.post(\"/predict\")\n",
-    "def predict(event: EventInput):\n",
-    "    try:\n",
-    "        # Convert input to DataFrame\n",
-    "        input_df = pd.DataFrame([event.dict()])\n",
-    "\n",
-    "        # Preprocess the input\n",
-    "        transformed = preprocessor.transform(input_df)\n",
-    "\n",
-    "        # Get prediction probabilities\n",
-    "        probs = model.predict_proba(transformed)\n",
-    "\n",
-    "        # Extract probability for 'Critical' class\n",
-    "        critical_index = list(label_encoder.classes_).index(\"Critical\")\n",
-    "        critical_prob = probs[0][critical_index]\n",
-    "\n",
-    "        # Assign severity label\n",
-    "        if critical_prob > 0.3:\n",
-    "            predicted_label = \"Critical\"\n",
-    "        else:\n",
-    "            predicted_label = label_encoder.inverse_transform([np.argmax(probs)])[0]\n",
-    "\n",
-    "        # Return results\n",
-    "        return {\n",
-    "            \"predicted_severity\": predicted_label,\n",
-    "            \"critical_probability\": round(float(critical_prob), 3)\n",
-    "        }\n",
-    "\n",
-    "    except Exception as e:\n",
-    "        return {\n",
-    "            \"error\": \"Prediction failed.\",\n",
-    "            \"details\": str(e)\n",
-    "        }\n"
-   ]
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python (learn-env)",
-   "language": "python",
-   "name": "learn-env"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.8.5"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 5
-}
+# FastAPI Setup for Serving
+from fastapi import FastAPI
+from pydantic import BaseModel
+import joblib
+import pandas as pd
+import numpy as np
+
+# Load model artifacts
+model = joblib.load('voting_severity_model.pkl')
+preprocessor = joblib.load('model_preprocessor.pkl')
+label_encoder = joblib.load('label_encoder.pkl')
+
+# Initialize FastAPI app
+app = FastAPI()
+
+# Input data structure
+class EventInput(BaseModel):
+    sub_event_type: str
+    disorder_type: str
+    primary_actor: str
+    secondary_actor: str
+    interaction: str
+    admin1: str
+    admin3: str
+    location: str
+    year: int
+    time_precision: int
+    latitude: float
+    longitude: float
+    month: int
+
+# Prediction endpoint
+@app.post("/predict")
+def predict(event: EventInput):
+    df = pd.DataFrame([event.dict()])
+    transformed = preprocessor.transform(df)
+    probs = model.predict_proba(transformed)
+    
+    critical_prob = probs[0] [list(label_encoder.classes_).index("Critical")]
+    severity = "Critical" if critical_prob > 0.3 else label_encoder.inverse_transform([np.argmax(probs)])[0]
+    
+    return {
+        "predicted_severity": severity,
+        "critical_probability": round(float(critical_prob), 3)
+    }
