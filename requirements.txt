@@ -3,6 +3,7 @@ uvicorn
 scikit-learn
 xgboost
 joblib
-numpy
+numpy 
+gunicorn
 pydantic
 imblearn
