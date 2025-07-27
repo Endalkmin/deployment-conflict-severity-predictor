@@ -36,25 +36,24 @@ except Exception as e:
 @app.post("/predict")
 async def predict(event: EventInput):
     try:
-        # Convert request to DataFrame
         input_df = pd.DataFrame([event.dict()])
-        print(f"[INPUT] Received columns: {input_df.columns.tolist()}")
+        print(f"[INPUT DF]:\n{input_df}")
 
-        # Transform features
         transformed = preprocessor.transform(input_df)
+        print(f"[TRANSFORMED SHAPE]: {transformed.shape}")
 
-        # Predict probabilities
         probs = model.predict_proba(transformed)
+        print(f"[PROBS]: {probs}")
 
-        # Extract critical probability
         critical_index = list(label_encoder.classes_).index("Critical")
         critical_prob = probs[0][critical_index]
+        print(f"[CRITICAL PROB]: {critical_prob}")
 
-        # Thresholding
         severity = (
             "Critical" if critical_prob > 0.3 
             else label_encoder.inverse_transform([np.argmax(probs)])[0]
         )
+        print(f"[PREDICTED SEVERITY]: {severity}")
 
         return {
             "predicted_severity": severity,
@@ -62,5 +61,5 @@ async def predict(event: EventInput):
         }
 
     except Exception as e:
-        print(f"[ERROR] Prediction failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Prediction Error: {str(e)}")
+        print(f"[ERROR TRACE]: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
