@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Unzip model if needed
-if [ -f "tuned_voting_model.zip" ]; then
-    echo "[INFO] Extracting model from tuned_voting_model.zip..."
+if [ -f "voting_model.zip" ]; then
+    echo "[INFO] Extracting model from voting_model.zip..."
     unzip -o tuned_voting_model.zip -d .
 fi
 

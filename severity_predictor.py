@@ -9,7 +9,7 @@ app = FastAPI()
 
 # Load model artifacts
 try:
-    model = joblib.load("tuned_voting_model.pkl")
+    model = joblib.load("voting_model.pkl")
     preprocessor = joblib.load("model_preprocessor.pkl")
     label_encoder = joblib.load("label_encoder.pkl")
 except Exception as e:
